@@ -29,6 +29,7 @@ client = TelegramClient('bot', api_id, api_hash).start(bot_token=bot_token)
 async def handler(event):
     try:
         # Foydalanuvchiga xabar yuborish
+        print('send message!!')
         await client.send_message(event.sender_id, 'Salom!')
     except UserIsBotError:
         print("Bot boshqa botga xabar yubora olmaydi.")

@@ -1,69 +1,60 @@
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+import os
+from telethon import TelegramClient, events
+from telethon.tl.functions.channels import InviteToChannelRequest
+from telethon.errors import UserPrivacyRestrictedError, UserAlreadyParticipantError
+from dotenv import load_dotenv
+from telethon.tl.types import InputPhoneContact, User
 
+class ImproperlyConfigured(Exception):
+    pass
 
-# API ID va API Hash qiymatlarini my.telegram.org orqali olishingiz mumkin
+def get_env_value(env_variable):
+    try:
+        return os.environ[env_variable]
+    except KeyError:
+        error_msg = f"Set the {env_variable} environment variable"
+        raise ImproperlyConfigured(error_msg)
 
-bot_username=''
-bot_token=''
-async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('Assalomu alaykum!')
+# .env faylini yuklash
+load_dotenv()
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('Assalomu alaykum! Qanday yordam berishim mumkun.')
+# Muhit o'zgaruvchilarini olish
+api_id = get_env_value('API_ID')
+api_hash = get_env_value('API_HASH')
+bot_token = get_env_value('BOT_TOKEN')
+channel_username = get_env_value('CHANNEL_USERNAME')
 
-async def custom_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('Assalomu alaykum! Bu foydalanuvchilar uchun.')
+# Clientni yaratish
+client = TelegramClient('bot', api_id, api_hash).start(bot_token=bot_token)
 
-
-def handle_response(text: str):
-    prepare = text.lower()
-    if 'hello' in prepare:
-        return 'Assalomu alaykum!'
-    if 'how are you' in prepare:
-        return 'yaxshi raxmat'
-    if 'i love python' in prepare:
-        return 'python is so cool'
-    return 'seni tushunmayapman nima demoqchisan...'
-
-
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message_type: str = update.message.chat.type
-    text: str = update.message.text
+@client.on(events.NewMessage(pattern='/start'))
+async def handler(event):
+    await event.respond('Salom! Menga kontakt raqamingizni yuboring.')
     
-    print(f'User ({update.message.chat.id} ) in {message_type}: {text}')
-    
-    if message_type == "group":
-        if bot_username in text:
-            new_text = text.replace(bot_username, '').strip()
-            response = handle_response(new_text)
-        else:
-            return
+    # Avtomatik kontakt yuborish
+    bot_user = await client.get_me()
+    contact = InputPhoneContact(client_id=0, phone=bot_user.phone, first_name=bot_user.first_name, last_name=bot_user.last_name)
+    await client.send_message(event.sender_id, file=contact)
+
+@client.on(events.NewMessage)
+async def add_contact_and_invite(event):
+    if event.contact:
+        contact = event.contact
+        try:
+            user = await client.get_entity(contact.user_id)
+            
+            # Foydalanuvchini kanalingizga qo'shish
+            try:
+                await client(InviteToChannelRequest(channel=channel_username, users=[user.id]))
+                await event.respond('Sizning kontakt raqamingiz qabul qilindi va siz kanalga qo\'shildingiz.')
+            except UserPrivacyRestrictedError:
+                await event.respond('Kechirasiz, foydalanuvchini kanalga qo\'shib bo\'lmaydi, chunki uning shaxsiy sozlamalari bunga ruxsat bermaydi.')
+            except UserAlreadyParticipantError:
+                await event.respond('Foydalanuvchi allaqachon kanalga qo\'shilgan.')
+        except Exception as e:
+            await event.respond(f'Kontakt qo\'shishda xatolik yuz berdi: {str(e)}')
     else:
-        response = handle_response(text)
-    print(response, "bot")
-    await update.message.reply_text(response)
-    
-async def error(update: Update,context: ContextTypes.DEFAULT_TYPE):
-    print("Starting ...")
-    print(f"Update {update} cause error {context.error}")
-    
-    if __name__ == '__main__':
-        app = Application.builder().token(bot_token).build()
-        app.add_handler(CommandHandler('start', start_command))
-        # commandani ushlab beradi 
-        app.add_handler(CommandHandler('help', help_command))
-        app.add_handler(CommandHandler('custom', custom_command))
-        app.add_handler(MessageHandler(filters.Text, handle_message))
-        app.add_error_handler(error)
-        print("Polling")
-        app.run_polling(poll_interval=4)
+        await event.respond('Iltimos, kontakt raqamingizni yuboring.')
 
-
-
-
-
-
-
-
-
+# Clientni ishga tushiring
+client.run_until_disconnected()
