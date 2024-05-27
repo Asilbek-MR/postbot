@@ -4,6 +4,7 @@ from telethon.tl.functions.channels import InviteToChannelRequest
 from telethon.errors import UserPrivacyRestrictedError, UserAlreadyParticipantError
 from dotenv import load_dotenv
 from telethon.tl.types import InputPhoneContact, User
+from telethon import functions, types
 
 class ImproperlyConfigured(Exception):
     pass
@@ -26,19 +27,20 @@ channel_username = get_env_value('CHANNEL_USERNAME')
 
 # Clientni yaratish
 client = TelegramClient('bot', api_id, api_hash).start(bot_token=bot_token)
+builder = client.build_reply_markup
 
 @client.on(events.NewMessage(pattern='/start'))
-async def handler(event):
-    await event.respond('Salom! Menga kontakt raqamingizni yuboring.')
+async def start(event):
+    # Userdan kontaktini yuborishini so'rash
+    await event.respond('Iltimos, kontaktingizni ulashing:', buttons=[
+        types.KeyboardButtonRequestPhone('Kontaktingizni ulashing')
+    ])
     
-    # Avtomatik kontakt yuborish
-    bot_user = await client.get_me()
-    contact = InputPhoneContact(client_id=0, phone=bot_user.phone, first_name=bot_user.first_name, last_name=bot_user.last_name)
-    await client.send_message(event.sender_id, file=contact)
 
 @client.on(events.NewMessage)
 async def add_contact_and_invite(event):
     if event.contact:
+        print(event)
         contact = event.contact
         try:
             user = await client.get_entity(contact.user_id)
