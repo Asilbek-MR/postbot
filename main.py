@@ -3,9 +3,9 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 
 # API ID va API Hash qiymatlarini my.telegram.org orqali olishingiz mumkin
-bot_token = '5754593374:AAELAHEjXIHEyS4RIBHbm8V-46h5DhNB11A'
-bot_username = '@napolyon01_bot'
 
+bot_username=''
+bot_token=''
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('Assalomu alaykum!')
 
