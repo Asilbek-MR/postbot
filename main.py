@@ -35,7 +35,6 @@ async def start(event):
     await event.respond('Iltimos, kontaktingizni ulashing:', buttons=[
         types.KeyboardButtonRequestPhone('Kontaktingizni ulashing')
     ])
-    print(event,'000000')
 
 # @client.on(events.NewMessage)
 # async def add_contact_and_invite(event):
@@ -69,7 +68,7 @@ async def contact_handler(event):
         f"Username: {user.username}\n"
         f"Name: {user.first_name} {user.last_name}\n"
         f"Phone: {contact.phone_number}\n"
-        f"Message: {event.message.message}"
+        # f"Message: {event.message.message}"
     )
 
     # Send message to the admin channel
