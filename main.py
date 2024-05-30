@@ -3,6 +3,7 @@ from telethon import TelegramClient, events
 from dotenv import load_dotenv
 from telethon import functions, types
 from telethon.tl.functions.messages import SendMessageRequest
+import time
 
 class ImproperlyConfigured(Exception):
     pass
@@ -36,50 +37,93 @@ async def start(event):
         types.KeyboardButtonRequestPhone('Kontaktingizni ulashing')
     ])
 
-# @client.on(events.NewMessage)
-# async def add_contact_and_invite(event):
-#     if event.contact:
-#         print(event)
-#         contact = event.contact
-#         try:
-#             user = await client.get_entity(contact.user_id)
-            
-#             # Foydalanuvchini kanalingizga qo'shish
-#             try:
-#                 await client(InviteToChannelRequest(channel=channel_username, users=[user.id]))
-#                 await event.respond('Sizning kontakt raqamingiz qabul qilindi va siz kanalga qo\'shildingiz.')
-#             except UserPrivacyRestrictedError:
-#                 await event.respond('Kechirasiz, foydalanuvchini kanalga qo\'shib bo\'lmaydi, chunki uning shaxsiy sozlamalari bunga ruxsat bermaydi.')
-#             except UserAlreadyParticipantError:
-#                 await event.respond('Foydalanuvchi allaqachon kanalga qo\'shilgan.')
-#         except Exception as e:
-#             await event.respond(f'Kontakt qo\'shishda xatolik yuz berdi: {str(e)}')
-#     else:
-#         await event.respond('Iltimos, kontakt raqamingizni yuboring.')
-
+    
 
 @client.on(events.NewMessage(func=lambda e: e.contact))
 async def contact_handler(event):
     contact = event.contact
-    user = await event.get_sender()
+    if contact:
+        user = await event.get_sender()
+        user_info = (
+            f"📚 User ID: {user.id}\n"
+            f"👨🏻‍💻 Username: {user.username}\n"
+            f"🔎  Name: {user.first_name} {user.last_name}\n"
+            f"🤳 Phone: {contact.phone_number}\n"     
+        )
+        # Send message to the admin channel
+        await client.send_message(admin_channel_id, user_info)
+    else:
+        pass
 
-    user_info = (
-        f"User ID: {user.id}\n"
-        f"Username: {user.username}\n"
-        f"Name: {user.first_name} {user.last_name}\n"
-        f"Phone: {contact.phone_number}\n"
-        # f"Message: {event.message.message}"
-    )
+user_data = {}
 
-    # Send message to the admin channel
-    await client.send_message(admin_channel_id, user_info)
+questions = [
+    "🚗Moshina modeli:",
+    "🔢Pozitsiya:",
+    "🛠Kraska:",
+    "♻️Rangi:",
+    "📊Yil:",
+    "🛞Probeg:",
+    "⛽️Benzin:",
+    "💰Narxi:",
+    "📞Tel:",
+    "📍Shaxar:",
+    "Iltimos, moshinaning rasmini yuboring:"
+]
 
-    # Respond to the user
-    await event.respond('Your contact has been received and forwarded to the admin channel.')
-    
+keys = [
+    "modeli",
+    "pozitsiya",
+    "kraska",
+    "rangi",
+    "yili",
+    "probeg",
+    "benzin",
+    "narxi",
+    "tel",
+    "shaxar"
+]
+@client.on(events.NewMessage)
+async def handle_message(event):
+    chat_id = event.chat_id
 
-
-
-
+    if chat_id not in user_data:
+        user_data[chat_id] = {'index': 0, 'data': {}}
+        await client.send_message(chat_id, questions[0])
+        user_data[chat_id]['index'] += 1
+    else:
+        index = user_data[chat_id]['index']
+        if index <= len(keys):
+            user_data[chat_id]['data'][keys[index - 1]] = event.message.message
+            if index < len(questions) - 1:
+                await client.send_message(chat_id, questions[index])
+                user_data[chat_id]['index'] += 1
+            elif index == len(questions) - 1:
+                await client.send_message(chat_id, questions[index])
+                user_data[chat_id]['index'] += 1
+        elif index == len(questions):
+            if event.message.photo:
+                photo = event.message.photo
+                path = await client.download_media(photo, file=f"./{chat_id}_car_photo.jpg")
+                user_data[chat_id]['data']['photo'] = path
+                collectdata = user_data[chat_id]['data']
+                info = (
+                    f"🚗Moshina modeli: {collectdata.get('modeli')}\n"
+                    f"🔢Pozitsiya: {collectdata.get('pozitsiya')}\n"
+                    f"🛠Kraska: {collectdata.get('kraska')}\n"
+                    f"♻️Rangi: {collectdata.get('rangi')}\n"
+                    f"📊Yil: {collectdata.get('yili')}\n"
+                    f"🛞Probeg: {collectdata.get('probeg')}\n"
+                    f"⛽️Benzin: {collectdata.get('benzin')}\n"
+                    f"💰Narxi: {collectdata.get('narxi')}\n"
+                    f"📞Tel: {collectdata.get('tel')}\n"
+                    f"📍Shaxar: {collectdata.get('shaxar')}\n"
+                )
+                await client.send_file(chat_id, path, caption=info)
+                await client.send_file(admin_channel_id,path, caption=info)
+                user_data.pop(chat_id)
+            else:
+                await client.send_message(chat_id, "Iltimos, moshinaning rasmini yuboring:")
+                
 # Clientni ishga tushiring
 client.run_until_disconnected()
