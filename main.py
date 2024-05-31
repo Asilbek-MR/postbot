@@ -1,9 +1,6 @@
 import os
 from telethon import TelegramClient, events
 from dotenv import load_dotenv
-from telethon import functions, types
-from telethon.tl.functions.messages import SendMessageRequest
-import time
 
 class ImproperlyConfigured(Exception):
     pass
@@ -24,7 +21,7 @@ api_hash = get_env_value('API_HASH')
 bot_token = get_env_value('BOT_TOKEN')
 channel_username = get_env_value('CHANNEL_USERNAME')
 # admin_channel_id = get_env_value('ADMIN_CHANNEL_ID')
-admin_channel_id = -1001518206463
+admin_channel_id = -1001878919453
 
 # Clientni yaratish
 client = TelegramClient('bot', api_id, api_hash).start(bot_token=bot_token)
@@ -32,28 +29,48 @@ builder = client.build_reply_markup
 
 @client.on(events.NewMessage(pattern='/start'))
 async def start(event):
+    chat_id = event.chat_id
     # Userdan kontaktini yuborishini so'rash
-    await event.respond('Iltimos, kontaktingizni ulashing:', buttons=[
-        types.KeyboardButtonRequestPhone('Kontaktingizni ulashing')
-    ])
+    await event.respond("Asslomu alaykum hush kelibsiz so'ralgan ma'lumotlarni to'liq yozing agar kamchiligi bo'lsa post o'chirilishi mumkun.")
+    info = (
+                        f"Misol uchun post!!\n"
+                        f"🚗Moshina modeli: Kobalt, Gentra...\n"
+                        f"🔢Pozitsiya: 1,2...\n"
+                        f"🛠Kraska: 30,40,50 \n"
+                        f"♻️Rangi: oq, qora...\n"
+                        f"📊Yil: 2021,2020...\n"
+                        f"🛞Probeg: 0, 1000 \n"
+                        f"⛽️Benzin: metan\n"
+                        f"💰Narxi: 10000,12000...\n"
+                        f"📞Tel: 994377299\n"
+                        f"📍Shaxar: Frag'ona...\n"
+                        f"👉Reklaman uchun bot: @appealuserbot\n"
+                        f"👉Kanalga az'o bo'ling: @every_dev\n"
+                    )
+    await client.send_message(chat_id,info)
+    
+
+    # await event.respond('Iltimos, kontaktingizni ulashing:', buttons=[
+    #     types.KeyboardButtonRequestPhone('Kontaktingizni ulashing')
+    # ])
 
     
 
-@client.on(events.NewMessage(func=lambda e: e.contact))
-async def contact_handler(event):
-    contact = event.contact
-    if contact:
-        user = await event.get_sender()
-        user_info = (
-            f"📚 User ID: {user.id}\n"
-            f"👨🏻‍💻 Username: {user.username}\n"
-            f"🔎  Name: {user.first_name} {user.last_name}\n"
-            f"🤳 Phone: {contact.phone_number}\n"     
-        )
-        # Send message to the admin channel
-        await client.send_message(admin_channel_id, user_info)
-    else:
-        pass
+# @client.on(events.NewMessage(func=lambda e: e.contact))
+# async def contact_handler(event):
+#     contact = event.contact
+#     if contact:
+#         user = await event.get_sender()
+#         user_info = (
+#             f"📚 User ID: {user.id}\n"
+#             f"👨🏻‍💻 Username: {user.username}\n"
+#             f"🔎  Name: {user.first_name} {user.last_name}\n"
+#             f"🤳 Phone: {contact.phone_number}\n"     
+#         )
+#         # Send message to the admin channel
+#         await client.send_message(-1001518206463, user_info)
+#     else:
+#         pass
 
 user_data = {}
 
@@ -64,7 +81,7 @@ questions = [
     "♻️Rangi:",
     "📊Yil:",
     "🛞Probeg:",
-    "⛽️Benzin:",
+    "⛽️Yoqilg'i:",
     "💰Narxi:",
     "📞Tel:",
     "📍Shaxar:",
@@ -83,9 +100,19 @@ keys = [
     "tel",
     "shaxar"
 ]
+
+
 @client.on(events.NewMessage)
 async def handle_message(event):
     chat_id = event.chat_id
+    message = event.message.message
+
+    if message == '/start':
+        user_data.pop(chat_id, None)
+        user_data[chat_id] = {'index': 0, 'data': {}}
+        await client.send_message(chat_id, "Botga xush kelibsiz! Ma'lumotlarni kiritishni boshlaymiz.\n\n" + questions[0])
+        user_data[chat_id]['index'] += 1
+        return
 
     if chat_id not in user_data:
         user_data[chat_id] = {'index': 0, 'data': {}}
@@ -94,7 +121,7 @@ async def handle_message(event):
     else:
         index = user_data[chat_id]['index']
         if index <= len(keys):
-            user_data[chat_id]['data'][keys[index - 1]] = event.message.message
+            user_data[chat_id]['data'][keys[index - 1]] = message
             if index < len(questions) - 1:
                 await client.send_message(chat_id, questions[index])
                 user_data[chat_id]['index'] += 1
@@ -103,27 +130,64 @@ async def handle_message(event):
                 user_data[chat_id]['index'] += 1
         elif index == len(questions):
             if event.message.photo:
-                photo = event.message.photo
-                path = await client.download_media(photo, file=f"./{chat_id}_car_photo.jpg")
-                user_data[chat_id]['data']['photo'] = path
-                collectdata = user_data[chat_id]['data']
-                info = (
-                    f"🚗Moshina modeli: {collectdata.get('modeli')}\n"
-                    f"🔢Pozitsiya: {collectdata.get('pozitsiya')}\n"
-                    f"🛠Kraska: {collectdata.get('kraska')}\n"
-                    f"♻️Rangi: {collectdata.get('rangi')}\n"
-                    f"📊Yil: {collectdata.get('yili')}\n"
-                    f"🛞Probeg: {collectdata.get('probeg')}\n"
-                    f"⛽️Benzin: {collectdata.get('benzin')}\n"
-                    f"💰Narxi: {collectdata.get('narxi')}\n"
-                    f"📞Tel: {collectdata.get('tel')}\n"
-                    f"📍Shaxar: {collectdata.get('shaxar')}\n"
-                )
-                await client.send_file(chat_id, path, caption=info)
-                await client.send_file(admin_channel_id,path, caption=info)
-                user_data.pop(chat_id)
+                if 'photo' in user_data[chat_id]['data']:
+                    await client.send_message(chat_id, "Siz allaqachon rasm yubordingiz. Qayta rasm yubora olmaysiz.")
+                else:
+                    photo = event.message.photo
+                    path = await client.download_media(photo, file=f"./{chat_id}_car_photo.jpg")
+                    user_data[chat_id]['data']['photo'] = path
+                    collectdata = user_data[chat_id]['data']
+
+                    # Validatsiya
+                    if not collectdata.get('modeli'):
+                        await client.send_message(chat_id, "Moshina modeli noto'g'ri kiritildi. Iltimos, qayta urinib ko'ring.")
+                        return
+                    if not collectdata.get('pozitsiya'):
+                        await client.send_message(chat_id, "Pozitsiya noto'g'ri kiritildi. Iltimos, qayta urinib ko'ring.")
+                        return
+                    if not collectdata.get('kraska').isdigit():
+                        await client.send_message(chat_id, "Kraska raqam bilan kiritilishi kerak. Iltimos, qayta urinib ko'ring.")
+                        return
+                    if not collectdata.get('yili').isdigit():
+                        await client.send_message(chat_id, "Yil raqam bilan kiritilishi kerak. Iltimos, qayta urinib ko'ring.")
+                        return
+                    if not collectdata.get('probeg').isdigit():
+                        await client.send_message(chat_id, "Probeg raqam bilan kiritilishi kerak. Iltimos, qayta urinib ko'ring.")
+                        return
+                    if not collectdata.get('narxi').isdigit():
+                        await client.send_message(chat_id, "Narx raqam bilan kiritilishi kerak. Iltimos, qayta urinib ko'ring.")
+                        return
+                    if not collectdata.get('tel'):
+                        await client.send_message(chat_id, "Telefon raqami noto'g'ri kiritildi. Iltimos, qayta urinib ko'ring.")
+                        return
+
+                    info = (
+                        f"🚗Moshina modeli: {collectdata.get('modeli')}\n"
+                        f"🔢Pozitsiya: {collectdata.get('pozitsiya')}\n"
+                        f"🛠Kraska: {collectdata.get('kraska')}\n"
+                        f"♻️Rangi: {collectdata.get('rangi')}\n"
+                        f"📊Yil: {collectdata.get('yili')}\n"
+                        f"🛞Probeg: {collectdata.get('probeg')}km\n"
+                        f"⛽️Benzin: {collectdata.get('benzin')}\n"
+                        f"💰Narxi: {collectdata.get('narxi')}$\n"
+                        f"📞Tel: {collectdata.get('tel')}\n"
+                        f"📍Shaxar: {collectdata.get('shaxar')}\n"
+                        f"👉Reklaman uchun bot: @appealuserbot\n"
+                        f"👉Kanalga az'o bo'ling: @every_dev\n"
+                    )
+                    
+                    # Rasimni kanalda yuborish
+                    await client.send_file(admin_channel_id, path, caption=info)
+                    await client.send_file(chat_id, path, caption=info)
+                    
+                    # Rasimni serverdan o'chirish
+                    if os.path.exists(path):
+                        os.remove(path)
+                    
+                    user_data.pop(chat_id)
             else:
                 await client.send_message(chat_id, "Iltimos, moshinaning rasmini yuboring:")
-                
-# Clientni ishga tushiring
+
+
+client.start()
 client.run_until_disconnected()
