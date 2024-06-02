@@ -40,10 +40,11 @@ async def start(event):
                         f"♻️Rangi: oq, qora...\n"
                         f"📊Yil: 2021,2020...\n"
                         f"🛞Probeg: 0, 1000 \n"
-                        f"⛽️Benzin: metan\n"
+                        f"⛽️Yoqilg'i turi: metan\n"
                         f"💰Narxi: 10000,12000...\n"
                         f"📞Tel: 994377299\n"
                         f"📍Shaxar: Frag'ona...\n"
+                        f" \n"
                         f"👉Reklaman uchun bot: @appealuserbot\n"
                         f"👉Kanalga az'o bo'ling: @every_dev\n"
                     )
@@ -81,7 +82,7 @@ questions = [
     "♻️Rangi:",
     "📊Yil:",
     "🛞Probeg:",
-    "⛽️Yoqilg'i:",
+    "⛽️Yoqilg'i turi:",
     "💰Narxi:",
     "📞Tel:",
     "📍Shaxar:",
@@ -101,92 +102,107 @@ keys = [
     "shaxar"
 ]
 
-
+@client.on(events.NewMessage(pattern='/donate'))
+async def start(event):
+    # Userdan kontaktini yuborishini so'rash
+    chat_id = event.chat_id
+    info = (
+                        f"Asslomu alaykum paddeshka uchun raxmat 💪\n"
+                        f"Karta: 8600492942461944\n"
+                        
+                    )
+    await client.send_message(chat_id,info)
 @client.on(events.NewMessage)
 async def handle_message(event):
     chat_id = event.chat_id
     message = event.message.message
-
-    if message == '/start':
-        user_data.pop(chat_id, None)
-        user_data[chat_id] = {'index': 0, 'data': {}}
-        await client.send_message(chat_id, "Botga xush kelibsiz! Ma'lumotlarni kiritishni boshlaymiz.\n\n" + questions[0])
-        user_data[chat_id]['index'] += 1
-        return
-
-    if chat_id not in user_data:
-        user_data[chat_id] = {'index': 0, 'data': {}}
-        await client.send_message(chat_id, questions[0])
-        user_data[chat_id]['index'] += 1
+    
+    if message == '/donate':
+        await client.send_message(chat_id,"...")
     else:
-        index = user_data[chat_id]['index']
-        if index <= len(keys):
-            user_data[chat_id]['data'][keys[index - 1]] = message
-            if index < len(questions) - 1:
-                await client.send_message(chat_id, questions[index])
-                user_data[chat_id]['index'] += 1
-            elif index == len(questions) - 1:
-                await client.send_message(chat_id, questions[index])
-                user_data[chat_id]['index'] += 1
-        elif index == len(questions):
-            if event.message.photo:
-                if 'photo' in user_data[chat_id]['data']:
-                    await client.send_message(chat_id, "Siz allaqachon rasm yubordingiz. Qayta rasm yubora olmaysiz.")
+        if message == '/start':
+            user_data.pop(chat_id, None)
+            user_data[chat_id] = {'index': 0, 'data': {}}
+            await client.send_message(chat_id, "Botga xush kelibsiz! Ma'lumotlarni kiritishni boshlaymiz.\n\n" + questions[0])
+            user_data[chat_id]['index'] += 1
+            return
+
+        if chat_id not in user_data:
+            user_data[chat_id] = {'index': 0, 'data': {}}
+            await client.send_message(chat_id, questions[0])
+            user_data[chat_id]['index'] += 1
+        else:
+            index = user_data[chat_id]['index']
+            if index <= len(keys):
+                user_data[chat_id]['data'][keys[index - 1]] = message
+                if index < len(questions) - 1:
+                    await client.send_message(chat_id, questions[index])
+                    user_data[chat_id]['index'] += 1
+                elif index == len(questions) - 1:
+                    await client.send_message(chat_id, questions[index])
+                    user_data[chat_id]['index'] += 1
+            elif index == len(questions):
+                if event.message.photo:
+                    if 'photo' in user_data[chat_id]['data']:
+                        await client.send_message(chat_id, "Siz allaqachon rasm yubordingiz. Qayta rasm yubora olmaysiz.")
+                    else:
+                        photo = event.message.photo
+                        path = await client.download_media(photo, file=f"./{chat_id}_car_photo.jpg")
+                        user_data[chat_id]['data']['photo'] = path
+                        collectdata = user_data[chat_id]['data']
+
+                        # Validatsiya
+                        if not collectdata.get('modeli'):
+                            await client.send_message(chat_id, "Moshina modeli noto'g'ri kiritildi. Iltimos, qayta urinib ko'ring.")
+                            return
+                        if not collectdata.get('pozitsiya'):
+                            await client.send_message(chat_id, "Pozitsiya noto'g'ri kiritildi. Iltimos, qayta urinib ko'ring.")
+                            return
+                        if not collectdata.get('kraska').isdigit():
+                            await client.send_message(chat_id, "Kraska raqam bilan kiritilishi kerak. Iltimos, qayta urinib ko'ring.")
+                            return
+                        if not collectdata.get('yili').isdigit():
+                            await client.send_message(chat_id, "Yil raqam bilan kiritilishi kerak. Iltimos, qayta urinib ko'ring.")
+                            return
+                        if not collectdata.get('probeg').isdigit():
+                            await client.send_message(chat_id, "Probeg raqam bilan kiritilishi kerak. Iltimos, qayta urinib ko'ring.")
+                            return
+                        if not collectdata.get('narxi').isdigit():
+                            await client.send_message(chat_id, "Narx raqam bilan kiritilishi kerak. Iltimos, qayta urinib ko'ring.")
+                            return
+                        if not collectdata.get('tel'):
+                            await client.send_message(chat_id, "Telefon raqami noto'g'ri kiritildi. Iltimos, qayta urinib ko'ring.")
+                            return
+
+                        info = (
+                            f"🚗Moshina modeli: {collectdata.get('modeli')}\n"
+                            f"🔢Pozitsiya: {collectdata.get('pozitsiya')}\n"
+                            f"🛠Kraska: {collectdata.get('kraska')}%\n"
+                            f"♻️Rangi: {collectdata.get('rangi')}\n"
+                            f"📊Yil: {collectdata.get('yili')}\n"
+                            f"🛞Probeg: {collectdata.get('probeg')}km\n"
+                            f"⛽️Yoqilg'i turi: {collectdata.get('benzin')}\n"
+                            f"💰Narxi: {collectdata.get('narxi')}$\n"
+                            f"📞Tel: {collectdata.get('tel')}\n"
+                            f"📍Shaxar: {collectdata.get('shaxar')}\n"
+                            f"👉Reklaman uchun bot: @appealuserbot\n"
+                            f"👉Kanalga az'o bo'ling: @every_dev\n"
+                        )
+                        
+                        # Rasimni kanalda yuborish
+                        await client.send_file(admin_channel_id, path, caption=info)
+                        await client.send_file(chat_id, path, caption=info)
+                        
+                        # Rasimni serverdan o'chirish
+                        if os.path.exists(path):
+                            os.remove(path)
+                        
+                        user_data.pop(chat_id)
                 else:
-                    photo = event.message.photo
-                    path = await client.download_media(photo, file=f"./{chat_id}_car_photo.jpg")
-                    user_data[chat_id]['data']['photo'] = path
-                    collectdata = user_data[chat_id]['data']
+                    await client.send_message(chat_id, "Iltimos, moshinaning rasmini yuboring:")
 
-                    # Validatsiya
-                    if not collectdata.get('modeli'):
-                        await client.send_message(chat_id, "Moshina modeli noto'g'ri kiritildi. Iltimos, qayta urinib ko'ring.")
-                        return
-                    if not collectdata.get('pozitsiya'):
-                        await client.send_message(chat_id, "Pozitsiya noto'g'ri kiritildi. Iltimos, qayta urinib ko'ring.")
-                        return
-                    if not collectdata.get('kraska').isdigit():
-                        await client.send_message(chat_id, "Kraska raqam bilan kiritilishi kerak. Iltimos, qayta urinib ko'ring.")
-                        return
-                    if not collectdata.get('yili').isdigit():
-                        await client.send_message(chat_id, "Yil raqam bilan kiritilishi kerak. Iltimos, qayta urinib ko'ring.")
-                        return
-                    if not collectdata.get('probeg').isdigit():
-                        await client.send_message(chat_id, "Probeg raqam bilan kiritilishi kerak. Iltimos, qayta urinib ko'ring.")
-                        return
-                    if not collectdata.get('narxi').isdigit():
-                        await client.send_message(chat_id, "Narx raqam bilan kiritilishi kerak. Iltimos, qayta urinib ko'ring.")
-                        return
-                    if not collectdata.get('tel'):
-                        await client.send_message(chat_id, "Telefon raqami noto'g'ri kiritildi. Iltimos, qayta urinib ko'ring.")
-                        return
 
-                    info = (
-                        f"🚗Moshina modeli: {collectdata.get('modeli')}\n"
-                        f"🔢Pozitsiya: {collectdata.get('pozitsiya')}\n"
-                        f"🛠Kraska: {collectdata.get('kraska')}\n"
-                        f"♻️Rangi: {collectdata.get('rangi')}\n"
-                        f"📊Yil: {collectdata.get('yili')}\n"
-                        f"🛞Probeg: {collectdata.get('probeg')}km\n"
-                        f"⛽️Benzin: {collectdata.get('benzin')}\n"
-                        f"💰Narxi: {collectdata.get('narxi')}$\n"
-                        f"📞Tel: {collectdata.get('tel')}\n"
-                        f"📍Shaxar: {collectdata.get('shaxar')}\n"
-                        f"👉Reklaman uchun bot: @appealuserbot\n"
-                        f"👉Kanalga az'o bo'ling: @every_dev\n"
-                    )
-                    
-                    # Rasimni kanalda yuborish
-                    await client.send_file(admin_channel_id, path, caption=info)
-                    await client.send_file(chat_id, path, caption=info)
-                    
-                    # Rasimni serverdan o'chirish
-                    if os.path.exists(path):
-                        os.remove(path)
-                    
-                    user_data.pop(chat_id)
-            else:
-                await client.send_message(chat_id, "Iltimos, moshinaning rasmini yuboring:")
+    
 
 
 client.start()
