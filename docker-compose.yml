@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  telegram-bot:
+    build: .
+    environment:
+      - API_ID=26230342
+      - API_HASH=9ae7a9067e358b1cbae12ac0a20ff95e
+      - BOT_TOKEN=7129894107:AAFvR_xicYQ0S7viH4K0usQemKDGmQYLZa0
+      - ADMIN_CHANNEL_ID=-1001518206463
+      - CHANNEL_USERNAME = enginer_developer
+    volumes:
+      - ./data:/app/data

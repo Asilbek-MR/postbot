@@ -19,7 +19,7 @@ load_dotenv()
 api_id = get_env_value('API_ID')
 api_hash = get_env_value('API_HASH')
 bot_token = get_env_value('BOT_TOKEN')
-channel_username = get_env_value('CHANNEL_USERNAME')
+# channel_username = get_env_value('CHANNEL_USERNAME')
 # admin_channel_id = get_env_value('ADMIN_CHANNEL_ID')
 admin_channel_id = -1001878919453
 
@@ -30,6 +30,7 @@ builder = client.build_reply_markup
 @client.on(events.NewMessage(pattern='/start'))
 async def start(event):
     chat_id = event.chat_id
+    print('Start')
     # Userdan kontaktini yuborishini so'rash
     await event.respond("Asslomu alaykum hush kelibsiz so'ralgan ma'lumotlarni to'liq yozing agar kamchiligi bo'lsa post o'chirilishi mumkun.")
     info = (
